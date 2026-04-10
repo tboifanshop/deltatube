@@ -4,8 +4,10 @@ import { Paper, IconButton } from '@mui/material';
 import { Search } from '@mui/icons-material';
 
 const KILLER_QUEEN_QUERY = 'why queen is so sexy deltarune';
+// Must match the kq-slide-up animation duration in index.css
+const EASTER_EGG_DELAY_MS = 700;
 
-// Falls back to emoji if the image hasn't been added to public/images/killer_queen.webp yet
+// Falls back to emoji if the image hasn't been added to public/images/deltarune_queen.webp yet
 const KillerQueenImage = () => {
   const [useFallback, setUseFallback] = useState(false);
   if (useFallback) {
@@ -18,7 +20,7 @@ const KillerQueenImage = () => {
   }
   return (
     <img
-      src={process.env.PUBLIC_URL + '/images/killer_queen.webp'}
+      src={process.env.PUBLIC_URL + '/images/deltarune_queen.webp'}
       alt="Queen"
       className="killer-queen-img"
       onError={() => setUseFallback(true)}
@@ -56,7 +58,7 @@ const SearchBar = () => {
         setKillerQueenActive(false);
         setSearchTerm('');
         navigate(`/search/${encodeURIComponent(KILLER_QUEEN_QUERY)}`);
-      }, 600);
+      }, EASTER_EGG_DELAY_MS);
 
       return;
     }
