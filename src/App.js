@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Box } from "@mui/material";
 import { ChannelDetail, Feed, Navbar, SearchFeed, VideoDetail } from "./components";
+import DancingCorner from "./components/ui/DancingCorner";
 
 const App = () => (
   <BrowserRouter>
@@ -12,6 +13,7 @@ const App = () => (
         <Route path="/channel/:id" element={<ChannelDetail />}/>
         <Route path="/search/:searchTerm" element={<SearchFeed />}/>
       </Routes>
+      <DancingCorner />
     </Box>
   </BrowserRouter>
 );

@@ -1,11 +1,26 @@
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Typography, Box, CardContent, CardMedia } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 import { demoProfilePicture } from '../utils/constants';
+import ExplosionEffect from './ui/ExplosionEffect';
 
-const ChannelCard = ({ channelDetail, marginTop }) => (
-  <Box
+const ChannelCard = ({ channelDetail, marginTop }) => {
+  const [subscribed, setSubscribed] = useState(false);
+  const [explosion, setExplosion] = useState(null);
+  const handleExplosionDone = useCallback(() => setExplosion(null), []);
+
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setSubscribed((prev) => !prev);
+    setExplosion({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+  };
+
+  return (
+    <>
+    <Box
    sx={{
     boxShadow: 'none',
     borderRadius: '20px',
@@ -44,7 +59,33 @@ const ChannelCard = ({ channelDetail, marginTop }) => (
         )}
       </CardContent>
     </Link>
+    <button
+      onClick={handleSubscribe}
+      aria-label="Subscribe to channel"
+      aria-pressed={subscribed}
+      style={{
+        display: 'block',
+        margin: '8px auto 0',
+        background: subscribed ? '#ff3300' : 'transparent',
+        border: '2px solid #ff3300',
+        borderRadius: 0,
+        color: subscribed ? '#fff' : '#ff3300',
+        cursor: 'pointer',
+        padding: '6px 20px',
+        fontFamily: 'inherit',
+        fontSize: '0.85rem',
+        letterSpacing: '0.5px',
+        transition: 'all 0.15s',
+      }}
+    >
+      {subscribed ? 'SUBSCRIBED' : 'SUBSCRIBE'}
+    </button>
   </Box>
-)
+  {explosion && (
+    <ExplosionEffect x={explosion.x} y={explosion.y} onDone={handleExplosionDone} />
+  )}
+  </>
+  );
+};
 
 export default ChannelCard;

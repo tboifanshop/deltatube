@@ -1,16 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ReactPlayer from 'react-player';
 import { Typography, Box, Stack } from '@mui/material';
-import { CheckCircle } from '@mui/icons-material';
+import { CheckCircle, Favorite, FavoriteBorder } from '@mui/icons-material';
 
 import { Videos, Loader } from './';
 import { fetchFromAPI } from '../utils/fetchFromAPI';
+import ExplosionEffect from './ui/ExplosionEffect';
 
 const VideoDetail = () => {
   const [videoDetail, setVideoDetail] = useState(null);
   const [videos, setVideos] = useState(null);
+  const [liked, setLiked] = useState(false);
+  const [explosion, setExplosion] = useState(null);
   const { id } = useParams();
+
+  const handleExplosionDone = useCallback(() => setExplosion(null), []);
+
+  const handleLike = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top  + rect.height / 2;
+    setLiked((prev) => !prev);
+    setExplosion({ x, y });
+  };
 
   useEffect(() => {
     fetchFromAPI(`videos?part=snippet,statistics&id=${id}`)
@@ -52,9 +65,28 @@ const VideoDetail = () => {
                 <Typography variant='body1' sx={{ opacity: 0.7 }}>
                   {parseInt(viewCount).toLocaleString()} views
                 </Typography>
-                <Typography variant='body1' sx={{ opacity: 0.7 }}>
-                  {parseInt(likeCount).toLocaleString()} likes
-                </Typography>
+                <button
+                  onClick={handleLike}
+                  aria-label="Like this video"
+                  aria-pressed={liked}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'transparent',
+                    border: liked ? '2px solid #ff3300' : '2px solid #555',
+                    borderRadius: 0,
+                    color: liked ? '#ff3300' : '#aaa',
+                    cursor: 'pointer',
+                    padding: '4px 12px',
+                    fontFamily: 'inherit',
+                    fontSize: '0.9rem',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {liked ? <Favorite sx={{ fontSize: '16px' }} /> : <FavoriteBorder sx={{ fontSize: '16px' }} />}
+                  {(parseInt(likeCount) + (liked ? 1 : 0)).toLocaleString()} likes
+                </button>
               </Stack>
             </Stack>
           </Box>
@@ -65,6 +97,9 @@ const VideoDetail = () => {
         </Box>
 
       </Stack>
+      {explosion && (
+        <ExplosionEffect x={explosion.x} y={explosion.y} onDone={handleExplosionDone} />
+      )}
     </Box>
   )
 }
