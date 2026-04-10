@@ -67,6 +67,8 @@ const VideoDetail = () => {
                 </Typography>
                 <button
                   onClick={handleLike}
+                  aria-label="Like this video"
+                  aria-pressed={liked}
                   style={{
                     display: 'flex',
                     alignItems: 'center',

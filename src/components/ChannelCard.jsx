@@ -61,6 +61,8 @@ const ChannelCard = ({ channelDetail, marginTop }) => {
     </Link>
     <button
       onClick={handleSubscribe}
+      aria-label="Subscribe to channel"
+      aria-pressed={subscribed}
       style={{
         display: 'block',
         margin: '8px auto 0',
