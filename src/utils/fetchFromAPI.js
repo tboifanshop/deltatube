@@ -1,19 +1,15 @@
 import axios from "axios";
 
-const BASE_URL = 'https://youtube-v31.p.rapidapi.com';
+const API_BASE =
+  process.env.REACT_APP_API_BASE || "https://muddy-term-bb0e.szymkowiaknatan22.workers.dev/api";
 
 const options = {
-    params: {
-      maxResults: '50',
-    },
-    headers: {
-      'X-RapidAPI-Key': process.env.REACT_APP_RAPID_API_KEY,
-      'X-RapidAPI-Host': 'youtube-v31.p.rapidapi.com'
-    }
+  params: {
+    maxResults: "50",
+  },
 };
 
 export const fetchFromAPI = async (url) => {
-    const { data } = await axios.get(`${BASE_URL}/${url}`, options);
-
-    return data;
-}
+  const { data } = await axios.get(`${API_BASE}/${url}`, options);
+  return data;
+};
