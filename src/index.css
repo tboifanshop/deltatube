@@ -1,4 +1,11 @@
 html,
+body,
+#root {
+  font-family: "8bitoperator JVE", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+html,
 body {
   margin: 0;
   padding: 0;
@@ -8,6 +15,7 @@ body {
 a {
   text-decoration: none;
   color: black;
+  font-family: inherit;
 }
 
 ::-webkit-scrollbar {
