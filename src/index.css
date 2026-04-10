@@ -49,6 +49,48 @@ a {
   width:350px;
 }
 
+/* Killer Queen Easter egg slide-up animation */
+@keyframes kq-slide-up {
+  0%   { transform: translateY(60px); opacity: 0; }
+  30%  { transform: translateY(-8px);  opacity: 1; }
+  70%  { transform: translateY(-8px);  opacity: 1; }
+  100% { transform: translateY(60px); opacity: 0; }
+}
+
+.killer-queen-egg {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 9999;
+  white-space: nowrap;
+}
+
+.killer-queen-egg--active {
+  animation: kq-slide-up 0.7s ease-in-out forwards;
+}
+
+.killer-queen-img {
+  height: 120px;
+  width: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 8px #4fc3f7);
+}
+
+.killer-queen-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: #ff0080;
+  text-shadow: 0 0 6px #ff0080;
+  font-weight: bold;
+}
+
 .category-btn{
   font-weight: bold !important;
   text-transform: capitalize;
