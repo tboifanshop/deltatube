@@ -222,36 +222,7 @@
   <div id="feed-wrap">
 
     <!-- Slides -->
-    <div class="short-slide active" id="slide-0">
-      <iframe src="https://www.youtube-nocookie.com/embed/M7lc1UVf-VE?autoplay=0&mute=1&loop=1&playlist=M7lc1UVf-VE&playsinline=1&rel=0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Deltatube Short 1"></iframe>
-    </div>
-    <div class="short-slide" id="slide-1">
-      <iframe src="https://www.youtube-nocookie.com/embed/jNQXAC9IVRw?autoplay=0&mute=1&loop=1&playlist=jNQXAC9IVRw&playsinline=1&rel=0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Deltatube Short 2"></iframe>
-    </div>
-    <div class="short-slide" id="slide-2">
-      <iframe src="https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ?autoplay=0&mute=1&loop=1&playlist=aqz-KE-bpKQ&playsinline=1&rel=0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Deltatube Short 3"></iframe>
-    </div>
-    <div class="short-slide" id="slide-3">
-      <iframe src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=0&mute=1&loop=1&playlist=dQw4w9WgXcQ&playsinline=1&rel=0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Deltatube Short 4"></iframe>
-    </div>
-    <div class="short-slide" id="slide-4">
-      <iframe src="https://www.youtube-nocookie.com/embed/9bZkp7q19f0?autoplay=0&mute=1&loop=1&playlist=9bZkp7q19f0&playsinline=1&rel=0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Deltatube Short 5"></iframe>
-    </div>
-    <div class="short-slide" id="slide-5">
-      <iframe src="https://www.youtube-nocookie.com/embed/3JZ_D3ELwOQ?autoplay=0&mute=1&loop=1&playlist=3JZ_D3ELwOQ&playsinline=1&rel=0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="Deltatube Short 6"></iframe>
-    </div>
+    <div id="slides-root"></div>
 
     <!-- Nav hints (decorative) -->
     <button id="nav-prev" onclick="goPrev()" aria-label="Previous short">▲ PREV</button>
@@ -274,7 +245,7 @@
     </svg>
 
     <!-- Counter -->
-    <div id="counter">1 / 6</div>
+    <div id="counter">Loading…</div>
 
     <!-- Soul canvas (rendered over everything in feed) -->
     <canvas id="soul-canvas" aria-hidden="true"></canvas>
@@ -328,8 +299,20 @@
   'use strict';
 
   // ─── State ──────────────────────────────────────────────────────────────────
-  const TOTAL = 6;
   let currentIdx = 0;
+  const slides = [];
+  let nextPageToken = '';
+  let hasMore = true;
+  let isLoading = false;
+  const seenVideoIds = new Set();
+
+  const API_BASE = window.DELTATUBE_API_BASE || 'https://muddy-term-bb0e.szymkowiaknatan22.workers.dev/api';
+  const SEARCH_QUERY = 'deltarune shorts';
+  const SEARCH_BATCH = 10;
+  const PREFETCH_BUFFER = 2;
+  const TRANSIENT_ERROR_DISPLAY_MS = 1600;
+  const ERROR_MORE = 'Could not load more videos.';
+  const ERROR_INITIAL = 'Unable to load videos. Please try again later.';
 
   // Soul position (fraction of feed canvas)
   let sx = 0.5, sy = 0.5;
@@ -337,6 +320,7 @@
 
   // ─── DOM refs ───────────────────────────────────────────────────────────────
   const feedWrap    = document.getElementById('feed-wrap');
+  const slidesRoot  = document.getElementById('slides-root');
   const soulCanvas  = document.getElementById('soul-canvas');
   const soulCtx     = soulCanvas.getContext('2d');
   const partCanvas  = document.getElementById('particle-canvas');
@@ -357,6 +341,113 @@
 
   const TOP_CIRC = 125.66;
   const HUD_CIRC = 201.06;
+
+  function getSlideEl(idx) {
+    return slides[idx] || null;
+  }
+
+  function getVideoId(item) {
+    if (!item) return '';
+    if (typeof item.id === 'string') return item.id;
+    return item.id?.videoId || '';
+  }
+
+  function buildEmbedUrl(videoId) {
+    const params = new URLSearchParams({
+      autoplay: '0',
+      mute: '1',
+      loop: '1',
+      playlist: videoId,
+      playsinline: '1',
+      rel: '0',
+    });
+    return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
+  }
+
+  function updateCounter() {
+    if (!slides.length) {
+      counter.textContent = isLoading ? 'Loading…' : 'No videos';
+      return;
+    }
+    const suffix = hasMore ? '+' : '';
+    counter.textContent = `${currentIdx + 1} / ${slides.length}${suffix}`;
+  }
+
+  function appendSlides(items) {
+    items.forEach((item) => {
+      const videoId = getVideoId(item);
+      if (!videoId || seenVideoIds.has(videoId)) return;
+      seenVideoIds.add(videoId);
+
+      const slide = document.createElement('div');
+      slide.className = 'short-slide';
+      slide.id = `slide-${slides.length}`;
+
+      const iframe = document.createElement('iframe');
+      iframe.src = buildEmbedUrl(videoId);
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+      iframe.allowFullscreen = true;
+      iframe.title = item?.snippet?.title || `Deltatube Short ${slides.length + 1}`;
+
+      slide.appendChild(iframe);
+      slidesRoot.appendChild(slide);
+      slides.push(slide);
+    });
+
+    if (slides.length && !getSlideEl(currentIdx)?.classList.contains('active')) {
+      getSlideEl(0)?.classList.add('active');
+      currentIdx = 0;
+    }
+    updateCounter();
+  }
+
+  async function loadMoreSlides() {
+    if (isLoading || !hasMore) return false;
+    isLoading = true;
+    updateCounter();
+    let loadSucceeded = false;
+    let showTransientError = false;
+
+    try {
+      const params = new URLSearchParams({
+        part: 'snippet',
+        q: SEARCH_QUERY,
+        type: 'video',
+        videoDuration: 'short',
+        videoEmbeddable: 'true',
+        order: 'relevance',
+        maxResults: String(SEARCH_BATCH),
+      });
+      if (nextPageToken) params.set('pageToken', nextPageToken);
+
+      const res = await fetch(`${API_BASE}/search?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to load shorts');
+      const data = await res.json();
+      appendSlides(data.items || []);
+      nextPageToken = data.nextPageToken || '';
+      if (!nextPageToken || !data.items?.length) hasMore = false;
+      loadSucceeded = true;
+    } catch (err) {
+      hasMore = false;
+      counter.textContent = slides.length
+        ? ERROR_MORE
+        : ERROR_INITIAL;
+      showTransientError = slides.length > 0;
+      if (showTransientError) setTimeout(updateCounter, TRANSIENT_ERROR_DISPLAY_MS);
+    } finally {
+      isLoading = false;
+      if (!showTransientError) updateCounter();
+    }
+    return loadSucceeded;
+  }
+
+  function maybePrefetch() {
+    const remainingAfterCurrent = slides.length - 1 - currentIdx;
+    if (hasMore && !isLoading && remainingAfterCurrent <= PREFETCH_BUFFER) {
+      loadMoreSlides();
+    }
+  }
 
   // ─── Heart soul pixel art ────────────────────────────────────────────────────
   // 8 col × 6 row grid; 1 = filled
@@ -499,16 +590,39 @@
 
   // ─── Navigation ─────────────────────────────────────────────────────────────
   function goTo(idx) {
-    document.getElementById(`slide-${currentIdx}`).classList.remove('active');
-    currentIdx = ((idx % TOTAL) + TOTAL) % TOTAL;
-    document.getElementById(`slide-${currentIdx}`).classList.add('active');
-    counter.textContent = `${currentIdx + 1} / ${TOTAL}`;
+    if (!slides.length) return;
+    getSlideEl(currentIdx)?.classList.remove('active');
+    currentIdx = ((idx % slides.length) + slides.length) % slides.length;
+    getSlideEl(currentIdx)?.classList.add('active');
+    updateCounter();
+    maybePrefetch();
     // reset hold states on nav
     topHold.reset(); botHold.reset();
   }
 
-  function goNext() { goTo(currentIdx + 1); }
-  function goPrev() { goTo(currentIdx - 1); }
+  function goNext() {
+    if (!slides.length) return;
+    if (currentIdx + 1 < slides.length) {
+      goTo(currentIdx + 1);
+      return;
+    }
+    if (hasMore) {
+      loadMoreSlides().then((loaded) => {
+        const hasFollowingSlide = currentIdx + 1 < slides.length;
+        if (loaded && hasFollowingSlide) {
+          goTo(currentIdx + 1);
+          return;
+        }
+        goTo(0);
+      });
+      return;
+    }
+    goTo(0);
+  }
+  function goPrev() {
+    if (!slides.length) return;
+    goTo(currentIdx - 1);
+  }
 
   // expose for onclick
   window.goNext = goNext;
@@ -733,6 +847,7 @@
 
   // initial dpad draw
   drawDpad();
+  loadMoreSlides();
 
 })();
 </script>
