@@ -1,9 +1,10 @@
-const CACHE_NAME = 'twincraft-v2';
+const CACHE_NAME = 'twincraft-v3';
 
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/shorts.html',
+  './',
+  './index.html',
+  './shorts.html',
+  './favicon.ico',
 ];
 
 self.addEventListener('install', event => {

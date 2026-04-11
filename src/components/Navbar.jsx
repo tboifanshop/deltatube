@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { logo } from "../utils/constants";
 import SearchBar from "./SearchBar";
 
+const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 
 const Navbar = () => (
   <Stack 
@@ -16,11 +17,11 @@ const Navbar = () => (
       justifyContent: 'space-between'
     }}
   >
-    <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
-      <img src={logo} alt="logo" height={45}/>
+    <Link to="/" aria-label="Home" style={{ display: 'flex', alignItems: 'center' }}>
+      <img src={logo} alt="DeltaTube logo" height={45}/>
     </Link>
     <a
-      href="shorts.html"
+      href={`${publicUrl}/shorts.html`}
       style={{
         color: '#5fa8d3',
         fontFamily: "'8bitoperator JVE', monospace",
