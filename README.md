@@ -25,12 +25,12 @@ A standalone static Shorts page — no build step required, works directly on Gi
 | **Mobile D-pad** | Drag the on-screen circular D-pad (shown on touch devices) |
 
 ### Features
-- 6 sample Deltarune YouTube embeds in a vertical 9:16 feed with fade transitions.
+- Dynamic Deltarune-focused Shorts feed loaded from the app's YouTube API backend, with lightweight on-demand pagination.
 - Pixel-art red heart soul drawn on canvas (8×6 pixel grid → 24×18 px sprite) with red glow.
 - Edge-triggered navigation with animated SVG progress rings (debounced — must leave zone before re-trigger).
 - Pixel explosion effect (20 colored square particles) on subscribe.
 - Deltarune-inspired styling: Press Start 2P pixel font, #5fa8d3 blue theme, CRT scanline overlay.
-- Service worker (`sw.js`, cache `twincraft-v2`) caches `index.html` and `shorts.html` for offline use.
+- Service worker (`sw.js`) caches `index.html` and `shorts.html` for offline use.
 
 ## Easter Egg – Queen 👑
 
@@ -41,4 +41,3 @@ When a user submits a search query that does **not** contain the word *deltarune
 3. The search query is replaced with `why queen is so sexy deltarune` and the search proceeds.
 
 To use a custom image, place a file at `public/images/deltarune_queen.webp` — if it's missing the Easter egg falls back to an emoji.
-
