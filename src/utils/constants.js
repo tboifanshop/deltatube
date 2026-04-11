@@ -11,7 +11,7 @@ import StarIcon from '@mui/icons-material/Star';
 import AudiotrackIcon from '@mui/icons-material/Audiotrack';
 import PersonIcon from '@mui/icons-material/Person';
 
-export const logo = 'https://i.ibb.co/s9Qys2j/logo.png';
+export const logo = `${process.env.PUBLIC_URL || ''}/favicon.ico`;
 
 export const categories = [
   { name: 'Deltarune',            icon: <HomeIcon /> },

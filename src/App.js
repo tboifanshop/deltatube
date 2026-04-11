@@ -4,7 +4,7 @@ import { ChannelDetail, Feed, Navbar, SearchFeed, VideoDetail } from "./componen
 import DancingCorner from "./components/ui/DancingCorner";
 
 const App = () => (
-  <BrowserRouter>
+  <BrowserRouter basename={process.env.PUBLIC_URL}>
     <Box sx={{ backgroundColor: '#000'}}>
       <Navbar />
       <Routes>

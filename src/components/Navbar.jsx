@@ -20,7 +20,7 @@ const Navbar = () => (
       <img src={logo} alt="logo" height={45}/>
     </Link>
     <a
-      href="shorts.html"
+      href={`${process.env.PUBLIC_URL || ''}/shorts.html`}
       style={{
         color: '#5fa8d3',
         fontFamily: "'8bitoperator JVE', monospace",
