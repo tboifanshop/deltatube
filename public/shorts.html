@@ -307,7 +307,7 @@
   const seenVideoIds = new Set();
 
   const API_BASE = window.DELTATUBE_API_BASE || 'https://muddy-term-bb0e.szymkowiaknatan22.workers.dev/api';
-  const SEARCH_QUERY = 'deltarune #shorts';
+  const SEARCH_QUERY = 'deltarune shorts';
   const SEARCH_BATCH = 10;
   const PREFETCH_BUFFER = 2;
   const TRANSIENT_ERROR_DISPLAY_MS = 1600;
@@ -612,7 +612,10 @@
           return;
         }
         goTo(0);
-      }).catch(() => goTo(0));
+      }).catch(() => {
+        counter.textContent = 'Could not load more videos.';
+        setTimeout(() => goTo(0), TRANSIENT_ERROR_DISPLAY_MS);
+      });
       return;
     }
     goTo(0);
