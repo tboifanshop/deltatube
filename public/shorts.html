@@ -404,6 +404,7 @@
     isLoading = true;
     updateCounter();
     let loadSucceeded = false;
+    let showTransientError = false;
 
     try {
       const params = new URLSearchParams({
@@ -426,17 +427,21 @@
       loadSucceeded = true;
     } catch (err) {
       hasMore = false;
-      if (!slides.length) counter.textContent = 'Unable to load videos. Please try again later.';
+      counter.textContent = slides.length
+        ? 'Could not load more videos.'
+        : 'Unable to load videos. Please try again later.';
+      showTransientError = slides.length > 0;
+      if (showTransientError) setTimeout(updateCounter, 1600);
     } finally {
       isLoading = false;
-      updateCounter();
+      if (!showTransientError) updateCounter();
     }
     return loadSucceeded;
   }
 
   function maybePrefetch() {
     const remainingAfterCurrent = slides.length - 1 - currentIdx;
-    if (remainingAfterCurrent <= PREFETCH_BUFFER) {
+    if (!isLoading && remainingAfterCurrent <= PREFETCH_BUFFER) {
       loadMoreSlides();
     }
   }
@@ -600,7 +605,7 @@
     }
     if (hasMore) {
       loadMoreSlides().then((loaded) => {
-        if (!loaded) return;
+        if (!loaded) { goTo(0); return; }
         if (currentIdx + 1 < slides.length) goTo(currentIdx + 1);
         else if (!hasMore) goTo(0);
       });
