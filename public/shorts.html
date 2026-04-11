@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deltatube Shorts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #5fa8d3;
+      --dark: #0d0d14;
+      --darker: #07070f;
+      --panel: #141424;
+      --yellow: #f8e44a;
+      --red: #e04040;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--darker);
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      overflow: hidden;
+    }
+
+    /* ── CRT scanline overlay ────────────────────── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 9000;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(0,0,0,0.18) 3px,
+        rgba(0,0,0,0.18) 4px
+      );
+    }
+
+    /* ── Layout ─────────────────────────────────── */
+    #app {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100vw; height: 100vh;
+      position: relative;
+    }
+
+    /* ── Feed container ─────────────────────────── */
+    #feed-wrap {
+      position: relative;
+      /* 9:16 within viewport, capped */
+      width: min(calc(100vh * 9 / 16), calc(100vw - 140px));
+      height: min(100vh, calc((100vw - 140px) * 16 / 9));
+      background: #000;
+      border: 2px solid var(--blue);
+      box-shadow: 0 0 20px rgba(95,168,211,0.4);
+      overflow: hidden;
+    }
+
+    .short-slide {
+      position: absolute; inset: 0;
+      opacity: 0;
+      transition: opacity 0.45s ease;
+      pointer-events: none;
+    }
+    .short-slide.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .short-slide iframe {
+      width: 100%; height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* ── Side HUD ───────────────────────────────── */
+    #hud {
+      position: absolute;
+      right: 10px; top: 50%;
+      transform: translateY(-50%);
+      display: flex; flex-direction: column;
+      align-items: center; gap: 16px;
+      z-index: 100;
+    }
+
+    .hud-btn {
+      background: var(--panel);
+      border: 2px solid var(--blue);
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      padding: 8px 6px;
+      cursor: pointer;
+      line-height: 1.6;
+      text-align: center;
+      width: 64px;
+      user-select: none;
+      transition: border-color .2s, color .2s;
+      position: relative;
+    }
+    .hud-btn:hover { border-color: #fff; }
+
+    #like-btn.liked { color: var(--yellow); border-color: var(--yellow); }
+    #sub-btn.subbed { color: var(--red);  border-color: var(--red);  }
+
+    .hud-icon { display: block; font-size: 14px; margin-bottom: 4px; }
+
+    /* hold-progress ring */
+    .hold-ring {
+      position: absolute; inset: -4px;
+      pointer-events: none;
+    }
+
+    /* ── Nav arrows (top / bottom HUD) ──────────── */
+    #nav-prev, #nav-next {
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      background: var(--panel);
+      border: 2px solid var(--blue);
+      color: var(--blue);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      z-index: 200;
+      user-select: none;
+    }
+    #nav-prev { top: 6px; }
+    #nav-next { bottom: 6px; }
+
+    /* ── Progress ring overlays ─────────────────── */
+    #ring-top, #ring-bot {
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 300;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    #ring-top { top: 4px; }
+    #ring-bot { bottom: 4px; }
+    #ring-top.active, #ring-bot.active { opacity: 1; }
+
+    /* ── Soul canvas ────────────────────────────── */
+    #soul-canvas {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      z-index: 400;
+      width: 100%; height: 100%;
+    }
+
+    /* ── Counter ────────────────────────────────── */
+    #counter {
+      position: absolute;
+      top: 8px; left: 8px;
+      font-size: 7px;
+      color: var(--blue);
+      z-index: 500;
+      text-shadow: 0 0 6px var(--blue);
+    }
+
+    /* ── Back link ──────────────────────────────── */
+    #back-link {
+      position: fixed;
+      top: 8px; left: 8px;
+      color: var(--blue);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      text-decoration: none;
+      z-index: 1000;
+      text-shadow: 0 0 6px var(--blue);
+    }
+    #back-link:hover { color: #fff; }
+
+    /* ── Particle canvas ────────────────────────── */
+    #particle-canvas {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 8000;
+      width: 100vw; height: 100vh;
+    }
+
+    /* ── D-pad (mobile only) ────────────────────── */
+    @media (pointer: coarse) {
+      #dpad-canvas {
+        display: block;
+        position: fixed;
+        bottom: 24px; left: 24px;
+        z-index: 600;
+        touch-action: none;
+      }
+    }
+    @media (pointer: fine) {
+      #dpad-canvas { display: none; }
+    }
+
+    /* ── Controls hint ──────────────────────────── */
+    #controls-hint {
+      position: fixed;
+      bottom: 8px; right: 8px;
+      font-size: 5px;
+      color: rgba(95,168,211,0.55);
+      z-index: 900;
+      line-height: 1.9;
+      text-align: right;
+    }
+    @media (pointer: coarse) { #controls-hint { display: none; } }
+  </style>
+</head>
+<body>
+
+<a id="back-link" href="index.html">← Back</a>
+
+<div id="app">
+  <div id="feed-wrap">
+
+    <!-- Slides -->
+    <div class="short-slide active" id="slide-0">
+      <iframe src="https://www.youtube.com/embed/YJpaxDMdRRE?autoplay=0&mute=1&loop=1&playlist=YJpaxDMdRRE"
+              allow="autoplay; encrypted-media" allowfullscreen title="Deltarune Short 1"></iframe>
+    </div>
+    <div class="short-slide" id="slide-1">
+      <iframe src="https://www.youtube.com/embed/Z9dp0A0RNRI?autoplay=0&mute=1&loop=1&playlist=Z9dp0A0RNRI"
+              allow="autoplay; encrypted-media" allowfullscreen title="Deltarune Short 2"></iframe>
+    </div>
+    <div class="short-slide" id="slide-2">
+      <iframe src="https://www.youtube.com/embed/pRCo3mS8-kU?autoplay=0&mute=1&loop=1&playlist=pRCo3mS8-kU"
+              allow="autoplay; encrypted-media" allowfullscreen title="Deltarune Short 3"></iframe>
+    </div>
+    <div class="short-slide" id="slide-3">
+      <iframe src="https://www.youtube.com/embed/mMAp0SYj96E?autoplay=0&mute=1&loop=1&playlist=mMAp0SYj96E"
+              allow="autoplay; encrypted-media" allowfullscreen title="Deltarune Short 4"></iframe>
+    </div>
+    <div class="short-slide" id="slide-4">
+      <iframe src="https://www.youtube.com/embed/3xHdDBsK2Hc?autoplay=0&mute=1&loop=1&playlist=3xHdDBsK2Hc"
+              allow="autoplay; encrypted-media" allowfullscreen title="Deltarune Short 5"></iframe>
+    </div>
+    <div class="short-slide" id="slide-5">
+      <iframe src="https://www.youtube.com/embed/M7ZnMBye7oI?autoplay=0&mute=1&loop=1&playlist=M7ZnMBye7oI"
+              allow="autoplay; encrypted-media" allowfullscreen title="Deltarune Short 6"></iframe>
+    </div>
+
+    <!-- Nav hints (decorative) -->
+    <button id="nav-prev" onclick="goPrev()" aria-label="Previous short">▲ PREV</button>
+    <button id="nav-next" onclick="goNext()" aria-label="Next short">▼ NEXT</button>
+
+    <!-- Edge-hold progress rings -->
+    <svg id="ring-top" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+      <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(95,168,211,0.2)" stroke-width="4"/>
+      <circle id="ring-top-arc" cx="24" cy="24" r="20" fill="none"
+              stroke="#5fa8d3" stroke-width="4"
+              stroke-dasharray="125.66" stroke-dashoffset="125.66"
+              stroke-linecap="round" transform="rotate(-90 24 24)"/>
+    </svg>
+    <svg id="ring-bot" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+      <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(224,64,64,0.2)" stroke-width="4"/>
+      <circle id="ring-bot-arc" cx="24" cy="24" r="20" fill="none"
+              stroke="#e04040" stroke-width="4"
+              stroke-dasharray="125.66" stroke-dashoffset="125.66"
+              stroke-linecap="round" transform="rotate(-90 24 24)"/>
+    </svg>
+
+    <!-- Counter -->
+    <div id="counter">1 / 6</div>
+
+    <!-- Soul canvas (rendered over everything in feed) -->
+    <canvas id="soul-canvas" aria-hidden="true"></canvas>
+  </div>
+
+  <!-- Side HUD -->
+  <div id="hud">
+    <button class="hud-btn" id="like-btn" onclick="tapLike()" aria-label="Like">
+      <span class="hud-icon" aria-hidden="true">♡</span>
+      <span id="like-text">LIKE</span>
+      <svg class="hold-ring" id="like-ring" viewBox="0 0 72 72" aria-hidden="true">
+        <circle cx="36" cy="36" r="32" fill="none" stroke="rgba(248,228,74,0.15)" stroke-width="4"/>
+        <circle id="like-arc" cx="36" cy="36" r="32" fill="none"
+                stroke="#f8e44a" stroke-width="4"
+                stroke-dasharray="201.06" stroke-dashoffset="201.06"
+                stroke-linecap="round" transform="rotate(-90 36 36)"/>
+      </svg>
+    </button>
+
+    <button class="hud-btn" id="sub-btn" onclick="tapSub()" aria-label="Subscribe">
+      <span class="hud-icon" aria-hidden="true">★</span>
+      <span id="sub-text">SUB</span>
+      <svg class="hold-ring" id="sub-ring" viewBox="0 0 72 72" aria-hidden="true">
+        <circle cx="36" cy="36" r="32" fill="none" stroke="rgba(224,64,64,0.15)" stroke-width="4"/>
+        <circle id="sub-arc" cx="36" cy="36" r="32" fill="none"
+                stroke="#e04040" stroke-width="4"
+                stroke-dasharray="201.06" stroke-dashoffset="201.06"
+                stroke-linecap="round" transform="rotate(-90 36 36)"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- Global particle canvas -->
+<canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+<!-- D-pad canvas (mobile) -->
+<canvas id="dpad-canvas" width="130" height="130" aria-label="D-pad controller"></canvas>
+
+<!-- Controls hint -->
+<div id="controls-hint" aria-label="Controls">
+  WASD / ↑↓←→ move soul<br>
+  Top 15% hold 2s → prev<br>
+  Bot 15% hold 2s → next<br>
+  ♡ hold 2s → like<br>
+  ★ hold 2s → subscribe
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ─── State ──────────────────────────────────────────────────────────────────
+  const TOTAL = 6;
+  let currentIdx = 0;
+
+  // Soul position (fraction of feed canvas)
+  let sx = 0.5, sy = 0.5;
+  const SOUL_SPEED = 0.004; // fraction/frame at 60fps
+
+  // ─── DOM refs ───────────────────────────────────────────────────────────────
+  const feedWrap    = document.getElementById('feed-wrap');
+  const soulCanvas  = document.getElementById('soul-canvas');
+  const soulCtx     = soulCanvas.getContext('2d');
+  const partCanvas  = document.getElementById('particle-canvas');
+  const partCtx     = partCanvas.getContext('2d');
+  const dpadCanvas  = document.getElementById('dpad-canvas');
+  const dpadCtx     = dpadCanvas.getContext('2d');
+  const counter     = document.getElementById('counter');
+  const likeBtn     = document.getElementById('like-btn');
+  const subBtn      = document.getElementById('sub-btn');
+  const likeText    = document.getElementById('like-text');
+  const subText     = document.getElementById('sub-text');
+  const likeArc     = document.getElementById('like-arc');
+  const subArc      = document.getElementById('sub-arc');
+  const ringTop     = document.getElementById('ring-top');
+  const ringBot     = document.getElementById('ring-bot');
+  const ringTopArc  = document.getElementById('ring-top-arc');
+  const ringBotArc  = document.getElementById('ring-bot-arc');
+
+  const TOP_CIRC = 125.66;
+  const HUD_CIRC = 201.06;
+
+  // ─── Heart soul pixel art ────────────────────────────────────────────────────
+  // 8 col × 6 row grid; 1 = filled
+  const HEART_PX = [
+    [0,1,1,0,0,1,1,0],
+    [1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1],
+    [0,1,1,1,1,1,1,0],
+    [0,0,1,1,1,1,0,0],
+    [0,0,0,1,1,0,0,0],
+  ];
+  const SOUL_PX  = 3; // 3px per pixel → 24×18 sprite
+  const SOUL_W   = 8 * SOUL_PX;
+  const SOUL_H   = 6 * SOUL_PX;
+
+  function drawSoul(ctx, x, y) {
+    ctx.save();
+    ctx.filter = 'drop-shadow(0 0 6px #e04040) drop-shadow(0 0 2px #ff8888)';
+    ctx.fillStyle = '#e04040';
+    for (let r = 0; r < HEART_PX.length; r++) {
+      for (let c = 0; c < HEART_PX[r].length; c++) {
+        if (HEART_PX[r][c]) {
+          ctx.fillRect(x + c * SOUL_PX, y + r * SOUL_PX, SOUL_PX, SOUL_PX);
+        }
+      }
+    }
+    ctx.restore();
+  }
+
+  // ─── Keyboard ───────────────────────────────────────────────────────────────
+  const keys = {};
+  window.addEventListener('keydown', e => { keys[e.key] = true; });
+  window.addEventListener('keyup',   e => { keys[e.key] = false; });
+
+  function getInput() {
+    let dx = 0, dy = 0;
+    if (keys['ArrowLeft']  || keys['a'] || keys['A']) dx -= 1;
+    if (keys['ArrowRight'] || keys['d'] || keys['D']) dx += 1;
+    if (keys['ArrowUp']    || keys['w'] || keys['W']) dy -= 1;
+    if (keys['ArrowDown']  || keys['s'] || keys['S']) dy += 1;
+    // diagonal normalization
+    if (dx !== 0 && dy !== 0) {
+      dx *= 0.7071;
+      dy *= 0.7071;
+    }
+    return { dx, dy };
+  }
+
+  // ─── D-pad (mobile) ─────────────────────────────────────────────────────────
+  let dpadDx = 0, dpadDy = 0;
+
+  function drawDpad() {
+    const ctx = dpadCtx;
+    const W = dpadCanvas.width, H = dpadCanvas.height;
+    const cx = W / 2, cy = H / 2, r = W / 2 - 6;
+    ctx.clearRect(0, 0, W, H);
+
+    // Outer ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(15,15,30,0.75)';
+    ctx.fill();
+    ctx.strokeStyle = '#5fa8d3';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Arrow triangles
+    const ar = r * 0.38, aOff = r * 0.52;
+    const dirs = [
+      { angle: -Math.PI/2, label: '▲' },
+      { angle:  Math.PI/2, label: '▼' },
+      { angle:  Math.PI,   label: '◀' },
+      { angle:  0,         label: '▶' },
+    ];
+    dirs.forEach(({ angle, label }) => {
+      const tx = cx + Math.cos(angle) * aOff;
+      const ty = cy + Math.sin(angle) * aOff;
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.font = `${Math.round(ar)}px sans-serif`;
+      ctx.fillStyle = '#5fa8d3';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 0, 0);
+      ctx.restore();
+    });
+
+    // Inner dot (thumb position indicator)
+    const dotX = cx + dpadDx * r * 0.35;
+    const dotY = cy + dpadDy * r * 0.35;
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 10, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(95,168,211,0.7)';
+    ctx.fill();
+  }
+
+  // Touch on dpad
+  let dpadTouchId = null;
+  let dpadOriginX = 0, dpadOriginY = 0;
+
+  dpadCanvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    dpadTouchId = t.identifier;
+    const rect = dpadCanvas.getBoundingClientRect();
+    dpadOriginX = t.clientX - rect.left - dpadCanvas.width / 2;
+    dpadOriginY = t.clientY - rect.top  - dpadCanvas.height / 2;
+  }, { passive: false });
+
+  dpadCanvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for (const t of e.changedTouches) {
+      if (t.identifier !== dpadTouchId) continue;
+      const rect = dpadCanvas.getBoundingClientRect();
+      const localX = t.clientX - rect.left - dpadCanvas.width / 2;
+      const localY = t.clientY - rect.top  - dpadCanvas.height / 2;
+      const len = Math.sqrt(localX * localX + localY * localY) || 1;
+      const maxR = dpadCanvas.width / 2 - 6;
+      const clamped = Math.min(len, maxR);
+      dpadDx = (localX / len) * (clamped / maxR);
+      dpadDy = (localY / len) * (clamped / maxR);
+      // snap to 4-way
+      if (Math.abs(dpadDx) > Math.abs(dpadDy)) {
+        dpadDy = 0;
+        dpadDx = Math.sign(dpadDx);
+      } else {
+        dpadDx = 0;
+        dpadDy = Math.sign(dpadDy);
+      }
+    }
+  }, { passive: false });
+
+  ['touchend', 'touchcancel'].forEach(ev =>
+    dpadCanvas.addEventListener(ev, e => {
+      for (const t of e.changedTouches) {
+        if (t.identifier === dpadTouchId) { dpadDx = 0; dpadDy = 0; dpadTouchId = null; }
+      }
+    })
+  );
+
+  // ─── Navigation ─────────────────────────────────────────────────────────────
+  function goTo(idx) {
+    document.getElementById(`slide-${currentIdx}`).classList.remove('active');
+    currentIdx = ((idx % TOTAL) + TOTAL) % TOTAL;
+    document.getElementById(`slide-${currentIdx}`).classList.add('active');
+    counter.textContent = `${currentIdx + 1} / ${TOTAL}`;
+    // reset hold states on nav
+    topHold.reset(); botHold.reset();
+  }
+
+  function goNext() { goTo(currentIdx + 1); }
+  function goPrev() { goTo(currentIdx - 1); }
+
+  // expose for onclick
+  window.goNext = goNext;
+  window.goPrev = goPrev;
+
+  // ─── Edge-hold logic ─────────────────────────────────────────────────────────
+  const HOLD_MS = 2000;
+  const ZONE    = 0.15; // 15% of feed height
+
+  function makeHoldTracker(arcEl, ringEl, onTrigger) {
+    let inZone = false;
+    let startTime = null;
+    let triggered = false; // must leave zone before re-trigger
+    let progress = 0;
+
+    return {
+      update(inside, nowMs) {
+        if (inside) {
+          if (!inZone) { inZone = true; startTime = nowMs; }
+          if (!triggered) {
+            progress = Math.min(1, (nowMs - startTime) / HOLD_MS);
+            ringEl.classList.add('active');
+            arcEl.style.strokeDashoffset = TOP_CIRC * (1 - progress);
+            if (progress >= 1) {
+              triggered = true;
+              onTrigger();
+            }
+          }
+        } else {
+          if (inZone) { inZone = false; triggered = false; }
+          progress = 0;
+          ringEl.classList.remove('active');
+          arcEl.style.strokeDashoffset = TOP_CIRC;
+        }
+      },
+      reset() {
+        inZone = false; startTime = null; triggered = false; progress = 0;
+        ringEl.classList.remove('active');
+        arcEl.style.strokeDashoffset = TOP_CIRC;
+      },
+    };
+  }
+
+  const topHold = makeHoldTracker(ringTopArc, ringTop, goPrev);
+  const botHold = makeHoldTracker(ringBotArc, ringBot, goNext);
+
+  // ─── Like / Subscribe hold logic ─────────────────────────────────────────────
+  let liked = false, subbed = false;
+
+  function makeHudHold(arcEl, btnEl, onTrigger) {
+    let inZone = false;
+    let startTime = null;
+    let triggered = false;
+    return {
+      update(inside, nowMs) {
+        if (inside) {
+          if (!inZone) { inZone = true; startTime = nowMs; }
+          if (!triggered) {
+            const p = Math.min(1, (nowMs - startTime) / HOLD_MS);
+            arcEl.style.strokeDashoffset = HUD_CIRC * (1 - p);
+            if (p >= 1) { triggered = true; onTrigger(); }
+          }
+        } else {
+          if (inZone) { inZone = false; triggered = false; }
+          arcEl.style.strokeDashoffset = HUD_CIRC;
+        }
+      },
+      reset() {
+        inZone = false; startTime = null; triggered = false;
+        arcEl.style.strokeDashoffset = HUD_CIRC;
+      },
+    };
+  }
+
+  const likeHold = makeHudHold(likeArc, likeBtn, toggleLike);
+  const subHold  = makeHudHold(subArc,  subBtn,  toggleSub);
+
+  function toggleLike() {
+    liked = !liked;
+    likeBtn.classList.toggle('liked', liked);
+    likeText.textContent = liked ? 'LIKED' : 'LIKE';
+  }
+
+  function toggleSub() {
+    subbed = !subbed;
+    subBtn.classList.toggle('subbed', subbed);
+    subText.textContent = subbed ? 'SUBBED' : 'SUB';
+    if (subbed) fireExplosion();
+  }
+
+  function tapLike() { toggleLike(); }
+  function tapSub()  { toggleSub(); }
+  window.tapLike = tapLike;
+  window.tapSub  = tapSub;
+
+  // ─── Pixel explosion ──────────────────────────────────────────────────────────
+  const particles = [];
+  const PART_COLORS = ['#e04040','#f8e44a','#5fa8d3','#ffffff','#ff8888','#88ccff','#ffe080'];
+
+  function fireExplosion() {
+    const rect = subBtn.getBoundingClientRect();
+    const ox = rect.left + rect.width / 2;
+    const oy = rect.top  + rect.height / 2;
+    for (let i = 0; i < 20; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 4;
+      particles.push({
+        x: ox, y: oy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 4 + Math.random() * 4,
+        color: PART_COLORS[Math.floor(Math.random() * PART_COLORS.length)],
+        life: 1.0,
+        decay: 0.018 + Math.random() * 0.012,
+      });
+    }
+    resizeParticleCanvas();
+  }
+
+  function resizeParticleCanvas() {
+    partCanvas.width  = window.innerWidth;
+    partCanvas.height = window.innerHeight;
+  }
+
+  function updateParticles() {
+    if (!particles.length) { partCtx.clearRect(0, 0, partCanvas.width, partCanvas.height); return; }
+    partCtx.clearRect(0, 0, partCanvas.width, partCanvas.height);
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.12; // gravity
+      p.life -= p.decay;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      partCtx.globalAlpha = p.life;
+      partCtx.fillStyle = p.color;
+      partCtx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+    partCtx.globalAlpha = 1;
+  }
+
+  // ─── Resize handling ─────────────────────────────────────────────────────────
+  function resizeSoulCanvas() {
+    soulCanvas.width  = feedWrap.clientWidth;
+    soulCanvas.height = feedWrap.clientHeight;
+  }
+
+  window.addEventListener('resize', () => {
+    resizeSoulCanvas();
+    resizeParticleCanvas();
+  });
+  resizeSoulCanvas();
+  resizeParticleCanvas();
+
+  // ─── Overlap detection ────────────────────────────────────────────────────────
+  function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+    return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+  }
+
+  function soulScreenRect() {
+    const feedRect = feedWrap.getBoundingClientRect();
+    const px = feedRect.left + sx * feedRect.width  - SOUL_W / 2;
+    const py = feedRect.top  + sy * feedRect.height - SOUL_H / 2;
+    return { x: px, y: py, w: SOUL_W, h: SOUL_H };
+  }
+
+  function elemRect(el) {
+    const r = el.getBoundingClientRect();
+    return { x: r.left, y: r.top, w: r.width, h: r.height };
+  }
+
+  // ─── Main loop ───────────────────────────────────────────────────────────────
+  let lastTime = 0;
+
+  function loop(ts) {
+    const dt = ts - lastTime || 0;
+    lastTime = ts;
+    // scale to ~60fps
+    const scale = dt / 16.67;
+
+    // ── Move soul ──
+    const { dx, dy } = getInput();
+    const totalDx = dx + dpadDx;
+    const totalDy = dy + dpadDy;
+    // re-normalize if both keyboard and dpad active (unlikely but safe)
+    let fdx = totalDx, fdy = totalDy;
+    const mag = Math.sqrt(fdx * fdx + fdy * fdy);
+    if (mag > 1) { fdx /= mag; fdy /= mag; }
+
+    sx = Math.max(0, Math.min(1, sx + fdx * SOUL_SPEED * scale));
+    sy = Math.max(0, Math.min(1, sy + fdy * SOUL_SPEED * scale));
+
+    // ── Draw soul ──
+    const cw = soulCanvas.width, ch = soulCanvas.height;
+    soulCtx.clearRect(0, 0, cw, ch);
+    const pxSoul = sx * cw - SOUL_W / 2;
+    const pySoul = sy * ch - SOUL_H / 2;
+    drawSoul(soulCtx, pxSoul, pySoul);
+
+    // ── Edge zones ──
+    const now = ts;
+    topHold.update(sy < ZONE, now);
+    botHold.update(sy > 1 - ZONE, now);
+
+    // ── HUD overlap ──
+    const sr = soulScreenRect();
+    const lr = elemRect(likeBtn);
+    const sbr = elemRect(subBtn);
+    likeHold.update(rectsOverlap(sr.x, sr.y, sr.w, sr.h, lr.x, lr.y, lr.w, lr.h), now);
+    subHold.update( rectsOverlap(sr.x, sr.y, sr.w, sr.h, sbr.x, sbr.y, sbr.w, sbr.h), now);
+
+    // ── D-pad ──
+    drawDpad();
+
+    // ── Particles ──
+    updateParticles();
+
+    requestAnimationFrame(loop);
+  }
+
+  requestAnimationFrame(loop);
+
+  // initial dpad draw
+  drawDpad();
+
+})();
+</script>
+</body>
+</html>

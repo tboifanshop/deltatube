@@ -23,5 +23,18 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p style="font-family:monospace;text-align:center;margin-top:2rem">
+        JavaScript is required to run Deltatube. &nbsp;
+        <a href="shorts.html">Open Shorts ↗</a>
+      </p>
+    </noscript>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('%PUBLIC_URL%/sw.js');
+        });
+      }
+    </script>
   </body>
 </html>
