@@ -426,7 +426,7 @@
       loadSucceeded = true;
     } catch (err) {
       hasMore = false;
-      if (!slides.length) counter.textContent = 'Unable to load videos. Check your connection and try again.';
+      if (!slides.length) counter.textContent = 'Unable to load videos. Please try again later.';
     } finally {
       isLoading = false;
       updateCounter();
@@ -435,8 +435,8 @@
   }
 
   function maybePrefetch() {
-    const remaining = slides.length - 1 - currentIdx;
-    if (remaining <= PREFETCH_BUFFER) {
+    const remainingAfterCurrent = slides.length - 1 - currentIdx;
+    if (remainingAfterCurrent <= PREFETCH_BUFFER) {
       loadMoreSlides();
     }
   }
