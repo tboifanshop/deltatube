@@ -311,6 +311,8 @@
   const SEARCH_BATCH = 10;
   const PREFETCH_BUFFER = 2;
   const TRANSIENT_ERROR_DISPLAY_MS = 1600;
+  const ERROR_MORE = 'Could not load more videos.';
+  const ERROR_INITIAL = 'Unable to load videos. Please try again later.';
 
   // Soul position (fraction of feed canvas)
   let sx = 0.5, sy = 0.5;
@@ -429,8 +431,8 @@
     } catch (err) {
       hasMore = false;
       counter.textContent = slides.length
-        ? 'Could not load more videos.'
-        : 'Unable to load videos. Please try again later.';
+        ? ERROR_MORE
+        : ERROR_INITIAL;
       showTransientError = slides.length > 0;
       if (showTransientError) setTimeout(updateCounter, TRANSIENT_ERROR_DISPLAY_MS);
     } finally {
@@ -612,9 +614,6 @@
           return;
         }
         goTo(0);
-      }).catch(() => {
-        counter.textContent = 'Could not load more videos.';
-        setTimeout(updateCounter, TRANSIENT_ERROR_DISPLAY_MS);
       });
       return;
     }
