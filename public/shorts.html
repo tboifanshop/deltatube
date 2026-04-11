@@ -442,7 +442,7 @@
 
   function maybePrefetch() {
     const remainingAfterCurrent = slides.length - 1 - currentIdx;
-    if (!isLoading && remainingAfterCurrent <= PREFETCH_BUFFER) {
+    if (hasMore && !isLoading && remainingAfterCurrent <= PREFETCH_BUFFER) {
       loadMoreSlides();
     }
   }
@@ -614,7 +614,7 @@
         goTo(0);
       }).catch(() => {
         counter.textContent = 'Could not load more videos.';
-        setTimeout(() => goTo(0), TRANSIENT_ERROR_DISPLAY_MS);
+        setTimeout(updateCounter, TRANSIENT_ERROR_DISPLAY_MS);
       });
       return;
     }
