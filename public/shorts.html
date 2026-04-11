@@ -307,7 +307,7 @@
   const seenVideoIds = new Set();
 
   const API_BASE = 'https://muddy-term-bb0e.szymkowiaknatan22.workers.dev/api';
-  const SEARCH_QUERY = 'deltarune shorts';
+  const SEARCH_QUERY = 'deltarune #shorts';
   const SEARCH_BATCH = 10;
   const PREFETCH_BUFFER = 2;
 
@@ -421,7 +421,7 @@
       const data = await res.json();
       appendSlides(data.items || []);
       nextPageToken = data.nextPageToken || '';
-      if (!nextPageToken || !(data.items || []).length) hasMore = false;
+      if (!nextPageToken || !data.items?.length) hasMore = false;
     } catch (err) {
       hasMore = false;
       if (!slides.length) counter.textContent = 'Unable to load videos';
@@ -598,6 +598,7 @@
     if (hasMore) {
       loadMoreSlides().then(() => {
         if (currentIdx + 1 < slides.length) goTo(currentIdx + 1);
+        else goTo(0);
       });
       return;
     }
