@@ -400,9 +400,10 @@
   }
 
   async function loadMoreSlides() {
-    if (isLoading || !hasMore) return;
+    if (isLoading || !hasMore) return false;
     isLoading = true;
     updateCounter();
+    let loadSucceeded = false;
 
     try {
       const params = new URLSearchParams({
@@ -422,13 +423,15 @@
       appendSlides(data.items || []);
       nextPageToken = data.nextPageToken || '';
       if (!nextPageToken || !data.items?.length) hasMore = false;
+      loadSucceeded = true;
     } catch (err) {
       hasMore = false;
-      if (!slides.length) counter.textContent = 'Unable to load videos';
+      if (!slides.length) counter.textContent = 'Unable to load videos. Check your connection and try again.';
     } finally {
       isLoading = false;
       updateCounter();
     }
+    return loadSucceeded;
   }
 
   function maybePrefetch() {
@@ -596,15 +599,19 @@
       return;
     }
     if (hasMore) {
-      loadMoreSlides().then(() => {
+      loadMoreSlides().then((loaded) => {
+        if (!loaded) return;
         if (currentIdx + 1 < slides.length) goTo(currentIdx + 1);
-        else goTo(0);
+        else if (!hasMore) goTo(0);
       });
       return;
     }
     goTo(0);
   }
-  function goPrev() { goTo(currentIdx - 1); }
+  function goPrev() {
+    if (!slides.length) return;
+    goTo(currentIdx - 1);
+  }
 
   // expose for onclick
   window.goNext = goNext;
