@@ -126,7 +126,7 @@ const HomeIntroOverlay = () => {
                 opacity: 1;
               }
               100% {
-                transform: translate(-50%, -50%) scale(0.001);
+                transform: translate(-50%, -50%) scale(0);
                 opacity: 0;
               }
             }
