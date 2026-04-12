@@ -2,10 +2,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Box } from "@mui/material";
 import { ChannelDetail, Feed, Navbar, SearchFeed, VideoDetail } from "./components";
 import DancingCorner from "./components/ui/DancingCorner";
+import HomeIntroOverlay from "./components/ui/HomeIntroOverlay";
 
 const App = () => (
   <BrowserRouter basename={process.env.PUBLIC_URL}>
     <Box sx={{ backgroundColor: '#000'}}>
+      <HomeIntroOverlay />
       <Navbar />
       <Routes>
         <Route path="/" exact element={<Feed />}/>
