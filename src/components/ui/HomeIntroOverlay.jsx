@@ -36,15 +36,11 @@ const HomeIntroOverlay = () => {
   if (!isVisible) return null;
 
   const durationMs = prefersReducedMotion ? REDUCED_INTRO_DURATION_MS : INTRO_DURATION_MS;
-  const cursorSrc = `${publicUrl}/images/Reaching for digital assistance.png`;
+  const cursorSrc = `${publicUrl}/images/Reaching%20for%20digital%20assistance.png`;
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      aria-label="Skip intro"
       onClick={() => setIsVisible(false)}
-      onKeyDown={() => setIsVisible(false)}
       style={{
         position: "fixed",
         inset: 0,
