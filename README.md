@@ -32,12 +32,8 @@ A standalone static Shorts page — no build step required, works directly on Gi
 - Deltarune-inspired styling: Press Start 2P pixel font, #5fa8d3 blue theme, CRT scanline overlay.
 - Service worker (`sw.js`) caches `index.html` and `shorts.html` for offline use.
 
-## Easter Egg – Queen 👑
+## Easter Egg – John Murston 🤠
 
-When a user submits a search query that does **not** contain the word *deltarune* (case-insensitive):
+When the user searches for `john murston` (case-insensitive, trimmed, and with normalized spaces), the search results experience switches to a full photo takeover that fills visible result containers using:
 
-1. The Queen character slides up beside the search bar.
-2. Her laugh sound effect (`public/sfx/ohohohoh.mp3`) plays.
-3. The search query is replaced with `why queen is so sexy deltarune` and the search proceeds.
-
-To use a custom image, place a file at `public/images/deltarune_queen.webp` — if it's missing the Easter egg falls back to an emoji.
+`https://static.wikia.nocookie.net/reddeadredemption/images/7/73/John_Marston_TBTN_5_Cropped.png/revision/latest?cb=20250808171334`
