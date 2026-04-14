@@ -37,3 +37,5 @@ A standalone static Shorts page — no build step required, works directly on Gi
 When the user searches for `john murston` (case-insensitive, trimmed, and with normalized spaces), the search results experience switches to a full photo takeover that fills visible result containers using:
 
 `https://static.wikia.nocookie.net/reddeadredemption/images/7/73/John_Marston_TBTN_5_Cropped.png/revision/latest?cb=20250808171334`
+
+`jack murston` is explicitly excluded from this exact-match takeover and follows normal search behavior.
