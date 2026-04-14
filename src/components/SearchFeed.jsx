@@ -6,17 +6,25 @@ import { fetchFromAPI } from '../utils/fetchFromAPI';
 import { Videos } from './';
 
 const JOHN_MURSTON_QUERY = 'john murston';
+const TAKEOVER_EXCLUDED_QUERIES = new Set(['jack murston']);
 
-const normalizeSearchTerm = (term = '') =>
+export const normalizeSearchTerm = (term = '') =>
   term
     .trim()
     .replace(/\s+/g, ' ')
     .toLowerCase();
 
+export const isJohnMurstonTakeoverSearch = (term = '') => {
+  const normalizedTerm = normalizeSearchTerm(term);
+  if (TAKEOVER_EXCLUDED_QUERIES.has(normalizedTerm)) return false;
+
+  return normalizedTerm === JOHN_MURSTON_QUERY;
+};
+
 const SearchFeed = () => {
   const [videos, setVideos] = useState([]);
   const { searchTerm } = useParams();
-  const isJohnMurstonTakeover = normalizeSearchTerm(searchTerm) === JOHN_MURSTON_QUERY;
+  const isJohnMurstonTakeover = isJohnMurstonTakeoverSearch(searchTerm);
 
   useEffect(() => {
     if (isJohnMurstonTakeover) {
