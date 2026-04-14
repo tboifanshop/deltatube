@@ -49,6 +49,40 @@ a {
   width:350px;
 }
 
+/* John Murston Easter egg takeover */
+.john-murston-takeover {
+  --john-murston-image: url("https://static.wikia.nocookie.net/reddeadredemption/images/7/73/John_Marston_TBTN_5_Cropped.png/revision/latest?cb=20250808171334");
+}
+
+.john-murston-takeover .MuiTypography-root,
+.john-murston-takeover .MuiStack-root,
+.john-murston-takeover .MuiBox-root,
+.john-murston-takeover .MuiCard-root,
+.john-murston-takeover .MuiCardContent-root,
+.john-murston-takeover .MuiCardMedia-root,
+.john-murston-takeover .john-murston-takeover-tile {
+  background-image: var(--john-murston-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.john-murston-takeover .john-murston-takeover-tile {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+@media (max-width: 600px) {
+  .john-murston-takeover .MuiTypography-root,
+  .john-murston-takeover .MuiStack-root,
+  .john-murston-takeover .MuiBox-root,
+  .john-murston-takeover .MuiCard-root,
+  .john-murston-takeover .MuiCardContent-root,
+  .john-murston-takeover .MuiCardMedia-root,
+  .john-murston-takeover .john-murston-takeover-tile {
+    background-size: contain;
+  }
+}
+
 /* Killer Queen Easter egg slide-up animation */
 @keyframes kq-slide-up {
   0%   { transform: translateY(60px); opacity: 0; }
